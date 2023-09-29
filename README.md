@@ -1,2 +1,3 @@
 # andersan
-andersan developers' python library
+
+Developers' python library for Andersan.

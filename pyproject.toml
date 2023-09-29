@@ -1,0 +1,25 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+
+[project]
+name = "andersan"
+version = "0.0.1" # major.minor.fix
+authors = [
+  { name="Masakazu Matsumoto", email="vitroid@gmail.com" },
+]
+description = "Developers' library for Andersan"
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+requires = ["numpy"]
+
+[project.urls]
+"Homepage" = "https://github.com/photochemistry/andersan"
+"Bug Tracker" = "https://github.com/photochemistry/andersan/issues"
+
