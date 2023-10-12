@@ -2,70 +2,31 @@
 地理院タイルの操作。
 """
 import numpy as np
+from logging import getLogger, DEBUG, basicConfig
 
 
-def get_tile_num(lat, lon, zoom):
-    """
-    緯度経度からタイル座標を取得する
-    Parameters
-    ----------
-    lat : number
-        タイル座標を取得したい地点の緯度(deg)
-    lon : number
-        タイル座標を取得したい地点の経度(deg)
-    zoom : int
-        タイルのズーム率
-    Returns
-    -------
-    xtile : int
-        タイルのX座標
-    ytile : int
-        タイルのY座標
-    """
-    # https://sorabatake.jp/7325/
-    # https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames#Python
-    lat_rad = np.radians(lat)
-    n = 2.0**zoom
-    xtile = int((lon + 180.0) / 360.0 * n)
-    ytile = int(
-        (1.0 - np.log(np.tan(lat_rad) + (1 / np.cos(lat_rad))) / np.pi) / 2.0 * n
-    )
-    return (xtile, ytile)
+# backward compat
+
+
+def tile_num(lat, lon, zoom):
+    logger = getLogger()
+    logger.warning("tile_num(lat, lon, zoom) is deprecated. Use code(zoom, lon, lat).")
+    return code(zoom, lon, lat)
 
 
 def num2deg(xtile, ytile, zoom):
-    # https://sorabatake.jp/7325/
-    # https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames#Python
-    n = 2.0**zoom
-    lon_deg = xtile / n * 360.0 - 180.0
-    lat_rad = np.arctan(np.sinh(np.pi * (1 - 2 * ytile / n)))
-    lat_deg = np.degrees(lat_rad)
-    return (lon_deg, lat_deg)
+    logger = getLogger()
+    logger.warning("num2deg(xtile, ytile, zoom) is deprecated. Use lonlat(zoom, ...).")
+    return lonlat(zoom, x=xtile, y=ytile)
 
 
 def get_tile_bbox(z, x, y):
-    """
-    タイル座標からバウンディングボックスを取得する
-    https://tools.ietf.org/html/rfc7946#section-5
-    Parameters
-    ----------
-    z : int
-        タイルのズーム率
-    x : int
-        タイルのX座標
-    y : int
-        タイルのY座標
-    Returns
-    -------
-    bbox: tuple of number
-        タイルのバウンディングボックス
-        (左下経度, 左下緯度, 右上経度, 右上緯度)
-    """
-    # https://sorabatake.jp/7325/
+    logger = getLogger()
+    logger.warning("get_tile_bbox(z, x, y) is deprecated. Use bbox(zoom, ...).")
+    return bounding_box(zoom=z, x=x, y=y)
 
-    right_top = num2deg(x + 1, y, z)
-    left_bottom = num2deg(x, y + 1, z)
-    return (left_bottom[0], left_bottom[1], right_top[0], right_top[1])
+
+# deprecated
 
 
 def get_tile_approximate_lonlats(z, x, y):
@@ -86,6 +47,9 @@ def get_tile_approximate_lonlats(z, x, y):
         256*256*2のnumpy配列
         経度、緯度の順
     """
+    logger = getLogger()
+    logger.warning("get_tile_approximate_lonlats(z, x, y) is deprecated.")
+
     # https://sorabatake.jp/7325/
     bbox = get_tile_bbox(z, x, y)
     width = abs(bbox[2] - bbox[0])
@@ -104,12 +68,127 @@ def get_tile_approximate_lonlats(z, x, y):
     return lonlats
 
 
+# functions
+
+
+def code(zoom, lon=None, lat=None, lonlats=None):
+    """
+    緯度経度からタイル座標を取得する
+    Parameters
+    ----------
+    lat : number
+        タイル座標を取得したい地点の緯度(deg)
+    lon : number
+        タイル座標を取得したい地点の経度(deg)
+    lonlats:
+        array of shape[:,2]
+    zoom : int
+        タイルのズーム率
+    Returns
+    -------
+    xtile : int
+        タイルのX座標
+    ytile : int
+        タイルのY座標
+    """
+    # https://sorabatake.jp/7325/
+    # https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames#Python
+
+    assert not (lon is None and lonlats is None)
+
+    if lon is None:
+        lon, lat = lonlats[:, 0], lonlats[:, 1]
+
+    lat_rad = np.radians(lat)
+    n = 2.0**zoom
+    xtile = np.floor((lon + 180.0) / 360.0 * n)
+    ytile = np.floor(
+        (1.0 - np.log(np.tan(lat_rad) + (1 / np.cos(lat_rad))) / np.pi) / 2.0 * n
+    )
+
+    if lonlats is not None:
+        return np.array([xtile, ytile]).T
+
+    return xtile, ytile
+
+
+def lonlat(zoom: int, x: int = None, y: int = None, xy=None):
+    """タイル番号から、タイルの左上角の緯度経度を計算する。
+
+    Args:
+        zoom (int): タイルのズーム率
+        x (int, optional): タイルのx. Defaults to None.
+        y (int, optional): タイルのy. Defaults to None.
+        xy (_type_, optional): 2次元numpy array. Defaults to None.
+
+    Returns:
+        x, yが指定された場合は緯度と経度。
+        xyが指定された場合は緯度経度の配列
+    """
+    # https://sorabatake.jp/7325/
+    # https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames#Python
+
+    assert not (x is None and xy is None)
+
+    n = 2.0**zoom
+
+    if x is None:
+        x, y = np.floor(xy[:, 0]), np.floor(xy[:, 1])
+    else:
+        x, y = np.floor(x), np.floor(y)
+
+    lon_deg = x / n * 360.0 - 180.0
+    lat_rad = np.arctan(np.sinh(np.pi * (1 - 2 * y / n)))
+    lat_deg = np.degrees(lat_rad)
+
+    if xy is not None:
+        return np.array([lon_deg, lat_deg]).T
+
+    return lon_deg, lat_deg
+
+
+def bounding_box(zoom, x, y):
+    """
+    タイル座標からバウンディングボックスを取得する
+    https://tools.ietf.org/html/rfc7946#section-5
+    Parameters
+    ----------
+    z : int
+        タイルのズーム率
+    x : int, optional
+        タイルのX座標
+    y : int, optional
+        タイルのY座標
+
+    Returns
+    -------
+    bbox: tuple of number
+        タイルのバウンディングボックス
+        (左下経度, 左下緯度, 右上経度, 右上緯度)
+    """
+    # https://sorabatake.jp/7325/
+
+    x = np.floor(x)
+    y = np.floor(y)
+    corners = np.array([[x, y + 1], [x + 1, y]])
+    lonlats = lonlat(zoom, xy=corners)
+    return (lonlats[0, 0], lonlats[0, 1], lonlats[1, 0], lonlats[1, 1])
+
+
 def test():
+    basicConfig(level=DEBUG)
     # 平塚市の中心部のタイルは 13/7266/3235
-    lon, lat = num2deg(7266, 3235, zoom=13)
+    lon, lat = lonlat(zoom=13, x=7266, y=3235)
     print(lon, lat)
-    x, y = get_tile_num(lat + 0.00001, lon - 0.00001, zoom=13)
+    x, y = code(zoom=13, lon=lon + 0.00001, lat=lat - 0.00001)
     print(x, y)
+    print(bounding_box(zoom=13, x=7266, y=3235))
+
+    xy = np.array([[7266, 3235], [7267, 3235], [7267, 3236], [7266, 3236]])
+    lonlats = lonlat(zoom=13, xy=xy)
+    print(lonlats)
+    xy = code(zoom=13, lonlats=lonlats)
+    print(xy)
 
 
 # test
