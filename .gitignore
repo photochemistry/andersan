@@ -24,3 +24,5 @@ tables/WS.csv
 Pipfile.lock
 dist/
 *.pyc
+grids/
+*.mp4
