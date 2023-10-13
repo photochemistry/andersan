@@ -190,6 +190,10 @@ def bounding_box(zoom, x, y):
 
 
 def test():
+    #
+    # 関数を改造してもちゃんと動くかどうかをいつも確認する。
+    #
+
     basicConfig(level=DEBUG)
     # 平塚市の中心部のタイルは 13/7266/3235
     lon, lat = lonlat(zoom=13, x=7266, y=3235)
