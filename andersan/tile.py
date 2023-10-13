@@ -128,22 +128,36 @@ def lonlat(zoom: int, x: int = None, y: int = None, xy=None):
     # https://sorabatake.jp/7325/
     # https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames#Python
 
+    # タイル番号から、タイルの左上角の緯度経度を計算します。
+    # 従来は1つの(x,y)対に対して1つの緯度しか返せませんでしたが、[:,2]形状のarrayを渡すと結果も経度緯度のarrayで返すようになりました。
+    # 1対だけ与えるときはパラメータx,yを指定し、arrayを渡す時はパラメータxyを指定します。同時に指定することはできません。
+
+    # 同時に指定したらエラーを吐いて止まる。
     assert not (x is None and xy is None)
 
+    # zoom値を、実際の比率に変換します。換算に必要です。
     n = 2.0**zoom
 
+    # 対が与えられた場合とarrayが与えられた場合で、あとの換算処理が同じになるように、データ形式を加工します。
+
     if x is None:
+        # arrayが与えられた場合、小数点以下を切りすて、座標を分離します。
         x, y = np.floor(xy[:, 0]), np.floor(xy[:, 1])
     else:
+        # 対が与えられた場合、小数点以下を切りすてます。
         x, y = np.floor(x), np.floor(y)
 
+    # 換算計算。これは上のリンクのどちらかからもってきただけ。
     lon_deg = x / n * 360.0 - 180.0
     lat_rad = np.arctan(np.sinh(np.pi * (1 - 2 * y / n)))
     lat_deg = np.degrees(lat_rad)
 
+    # 返り値の返し方も、対とアレイで別になります。
     if xy is not None:
+        # アレイの場合には、緯度と経度を束ね、[:,2]形状になるように転置します。
         return np.array([lon_deg, lat_deg]).T
 
+    # 対の場合には、対を返します。
     return lon_deg, lat_deg
 
 
