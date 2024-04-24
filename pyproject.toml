@@ -3,23 +3,37 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 
-[project]
-name = "andersan"
-version = "0.0.5" # major.minor.fix
-authors = [
-  { name="Masakazu Matsumoto", email="vitroid@gmail.com" },
-]
-description = "Developers' library for Andersan"
-readme = "README.md"
-requires-python = ">=3.9"
-classifiers = [
-    "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
-    "Operating System :: OS Independent",
-]
-requires = ["numpy"]
+# [project]
+# name = "andersan"
+# version = "0.0.5" # major.minor.fix
+# authors = [
+#   { name="Masakazu Matsumoto", email="vitroid@gmail.com" },
+# ]
+# description = "Developers' library for Andersan"
+# readme = "README.md"
+# requires-python = ">=3.9"
+# classifiers = [
+#     "Programming Language :: Python :: 3",
+#     "License :: OSI Approved :: MIT License",
+#     "Operating System :: OS Independent",
+# ]
+# dependencies = ["numpy"]
 
 [project.urls]
 "Homepage" = "https://github.com/photochemistry/andersan"
 "Bug Tracker" = "https://github.com/photochemistry/andersan/issues"
 
+[tool.poetry]
+name = "andersan"
+version = "0.0.5" # major.minor.fix
+description = "Developers' library for Andersan"
+authors = ["vitroid <vitroid@gmail.com>"]
+readme = "README.md"
+
+
+[tool.poetry.dependencies]
+python = "^3.10"
+numpy = "^1.26.4"
+# fitz = "*"
+# easyocr = "*"
+# frontend = "*"

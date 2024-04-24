@@ -1,6 +1,7 @@
 """
 地理院タイルの操作。
 """
+
 import numpy as np
 from logging import getLogger, DEBUG, basicConfig
 
@@ -141,7 +142,11 @@ def lonlat(zoom: int, x: int = None, y: int = None, xy=None):
     # 対が与えられた場合とarrayが与えられた場合で、あとの換算処理が同じになるように、データ形式を加工します。
 
     if x is None:
-        # arrayが与えられた場合、小数点以下を切りすて、座標を分離します。
+        # arrayが与えられた場合
+        # 1次元整数なら、x,yを分離する
+        if len(xy.shape) == 1:
+            xy = np.array([(x // 10000, x % 10000) for x in xy])
+        # 2次元ならx,yとする
         x, y = np.floor(xy[:, 0]), np.floor(xy[:, 1])
     else:
         # 対が与えられた場合、小数点以下を切りすてます。
@@ -201,6 +206,9 @@ def test():
     x, y = code(zoom=13, lon=lon + 0.00001, lat=lat - 0.00001)
     print(x, y)
     print(bounding_box(zoom=13, x=7266, y=3235))
+    # こんな書きかたができればいいなあ。
+    # lon, lat = lonlat(zoom=13, xy=(7266, 3235))
+    print(lon, lat)
 
     xy = np.array([[7266, 3235], [7267, 3235], [7267, 3236], [7266, 3236]])
     lonlats = lonlat(zoom=13, xy=xy)
