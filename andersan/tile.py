@@ -23,7 +23,7 @@ def num2deg(xtile, ytile, zoom):
 
 def get_tile_bbox(z, x, y):
     logger = getLogger()
-    logger.warning("get_tile_bbox(z, x, y) is deprecated. Use bbox(zoom, ...).")
+    logger.warning("get_tile_bbox(z, x, y) is deprecated. Use bounding_box(zoom, ...).")
     return bounding_box(zoom=z, x=x, y=y)
 
 
