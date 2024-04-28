@@ -141,14 +141,21 @@ def lonlat(zoom: int, x: int = None, y: int = None, xy=None):
 
     # 対が与えられた場合とarrayが与えられた場合で、あとの換算処理が同じになるように、データ形式を加工します。
 
+    logger = getLogger()
     if x is None:
-        # arrayが与えられた場合
-        # 1次元整数なら、x,yを分離する
-        if len(xy.shape) == 1:
-            xy = np.array([(x // 10000, x % 10000) for x in xy])
-        # 2次元ならx,yとする
-        x, y = np.floor(xy[:, 0]), np.floor(xy[:, 1])
+        if type(xy) == np.ndarray:
+            # arrayが与えられた場合
+            # 1次元整数なら、x,yを分離する
+            if len(xy.shape) == 1:
+                logger.warning("andersan.tile(): 8-digit code is deprecated.")
+                xy = np.array([(x // 10000, x % 10000) for x in xy])
+            # 2次元ならx,yとする
+            x, y = np.floor(xy[:, 0]), np.floor(xy[:, 1])
+        else:
+            xy = np.array(xy)
+            x, y = np.floor(xy[:, 0]), np.floor(xy[:, 1])
     else:
+        logger.warning("andersan.tile(): 'x=' is deprecated. Use 'xy='.")
         # 対が与えられた場合、小数点以下を切りすてます。
         x, y = np.floor(x), np.floor(y)
 
