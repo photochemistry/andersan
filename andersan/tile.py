@@ -108,7 +108,7 @@ def code(zoom, lon=None, lat=None, lonlats=None):
     ).astype(int)
 
     if lonlats is not None:
-        return np.array([xtile, ytile]).T
+        return np.array([xtile, ytile], dtype=int).T
 
     return xtile, ytile
 
