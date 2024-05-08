@@ -102,10 +102,10 @@ def code(zoom, lon=None, lat=None, lonlats=None):
 
     lat_rad = np.radians(lat)
     n = 2.0**zoom
-    xtile = np.floor((lon + 180.0) / 360.0 * n)
+    xtile = np.floor((lon + 180.0) / 360.0 * n).astype(int)
     ytile = np.floor(
         (1.0 - np.log(np.tan(lat_rad) + (1 / np.cos(lat_rad))) / np.pi) / 2.0 * n
-    )
+    ).astype(int)
 
     if lonlats is not None:
         return np.array([xtile, ytile]).T
@@ -118,8 +118,8 @@ def lonlat(zoom: int, x: int = None, y: int = None, xy=None):
 
     Args:
         zoom (int): タイルのズーム率
-        x (int, optional): タイルのx. Defaults to None.
-        y (int, optional): タイルのy. Defaults to None.
+        x (int, optional): タイルのx. Defaults to None. (Deprecated)
+        y (int, optional): タイルのy. Defaults to None. (Deprecated)
         xy (_type_, optional): 2次元numpy array. Defaults to None.
 
     Returns:
@@ -147,7 +147,7 @@ def lonlat(zoom: int, x: int = None, y: int = None, xy=None):
             # arrayが与えられた場合
             # 1次元整数なら、x,yを分離する
             if len(xy.shape) == 1:
-                logger.warning("andersan.tile(): 8-digit code is deprecated.")
+                logger.warning("andersan.tile.lonlat(): 8-digit code is deprecated.")
                 xy = np.array([(x // 10000, x % 10000) for x in xy])
             # 2次元ならx,yとする
             x, y = np.floor(xy[:, 0]), np.floor(xy[:, 1])
@@ -155,7 +155,7 @@ def lonlat(zoom: int, x: int = None, y: int = None, xy=None):
             xy = np.array(xy)
             x, y = np.floor(xy[:, 0]), np.floor(xy[:, 1])
     else:
-        logger.warning("andersan.tile(): 'x=' is deprecated. Use 'xy='.")
+        logger.warning("andersan.tile.lonlat(): 'x=' is deprecated. Use 'xy='.")
         # 対が与えられた場合、小数点以下を切りすてます。
         x, y = np.floor(x), np.floor(y)
 
