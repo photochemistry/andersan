@@ -204,10 +204,9 @@ def bounding_box(zoom, x, y):
 def make_grid(zoom, lonlat_range):
     codes = code(zoom, lonlats=lonlat_range)
     topleft, bottomright = codes.astype(int)
-    Xt, Yt = np.mgrid[topleft[0] : bottomright[0], topleft[1] : bottomright[1]]
-    XY = np.vstack([Xt.ravel(), Yt.ravel()])
-    lon, lat = lonlat(zoom=zoom, xy=XY)
-    return np.array([lon, lat]).T
+    Yt, Xt = np.mgrid[topleft[1] : bottomright[1], topleft[0] : bottomright[0]]
+    XY = np.vstack([Xt.ravel(), Yt.ravel()]).T
+    return lonlat(zoom=zoom, xy=XY)
 
 
 def test():
