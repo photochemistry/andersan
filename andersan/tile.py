@@ -201,6 +201,15 @@ def bounding_box(zoom, x, y):
     return (lonlats[0, 0], lonlats[0, 1], lonlats[1, 0], lonlats[1, 1])
 
 
+def make_grid(zoom, lonlat_range):
+    codes = code(zoom, lonlats=lonlat_range)
+    topleft, bottomright = codes.astype(int)
+    Xt, Yt = np.mgrid[topleft[0] : bottomright[0], topleft[1] : bottomright[1]]
+    XY = np.vstack([Xt.ravel(), Yt.ravel()])
+    lon, lat = lonlat(zoom=zoom, xy=XY)
+    return np.array([lon, lat]).T
+
+
 def test():
     #
     # 関数を改造してもちゃんと動くかどうかをいつも確認する。
