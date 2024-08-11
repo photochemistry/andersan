@@ -12,7 +12,7 @@ def interpolate_(point, vertices):
     return p, q, r
 
 
-def interpolate(stations: dict, grids: np.ndarray):
+def interpolate(stations: dict, grids: np.ndarray, extrapolate: bool = False):
     """_summary_
 
     Args:
@@ -43,6 +43,12 @@ def interpolate(stations: dict, grids: np.ndarray):
         A, B, C = st[a], st[b], st[c]
         p, q, r = interpolate_(gridpoint, locations[tri.simplices[triangle]])
         if 0 <= p <= 1 and 0 <= q <= 1 and 0 <= r <= 1:
+            yield A, p, B, q, C, r
+        elif extrapolate:
+            pqr = np.array([p, q, r])
+            pqr[pqr < 0] = 0
+            pqr /= np.sum(pqr)
+            p, q, r = pqr
             yield A, p, B, q, C, r
         else:
             yield A, None, B, None, C, None
