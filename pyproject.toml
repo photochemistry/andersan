@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "andersan"
-version = "0.0.6" # major.minor.fix
+version = "0.0.7" # major.minor.fix
 # authors = [
 #   { name="Masakazu Matsumoto", email="vitroid@gmail.com" },
 # ]
@@ -25,7 +25,7 @@ version = "0.0.6" # major.minor.fix
 
 [tool.poetry]
 name = "andersan"
-version = "0.0.6" # major.minor.fix
+version = "0.0.7" # major.minor.fix
 description = "Developers' library for Andersan"
 authors = ["vitroid <vitroid@gmail.com>"]
 readme = "README.md"
