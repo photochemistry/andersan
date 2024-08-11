@@ -45,10 +45,13 @@ def interpolate(stations: dict, grids: np.ndarray, extrapolate: bool = False):
         if 0 <= p <= 1 and 0 <= q <= 1 and 0 <= r <= 1:
             yield A, p, B, q, C, r
         elif extrapolate:
+            print(p, q, r)
             pqr = np.array([p, q, r])
             pqr[pqr < 0] = 0
             pqr /= np.sum(pqr)
             p, q, r = pqr
+            print(p, q, r)
+            print()
             yield A, p, B, q, C, r
         else:
             yield A, None, B, None, C, None
