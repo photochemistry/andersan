@@ -44,3 +44,5 @@ def interpolate(stations: dict, grids: np.ndarray):
         p, q, r = interpolate_(gridpoint, locations[tri.simplices[triangle]])
         if 0 <= p <= 1 and 0 <= q <= 1 and 0 <= r <= 1:
             yield A, p, B, q, C, r
+        else:
+            yield A, None, B, None, C, None
