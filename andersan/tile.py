@@ -201,7 +201,16 @@ def bounding_box(zoom, x, y):
     return (lonlats[0, 0], lonlats[0, 1], lonlats[1, 0], lonlats[1, 1])
 
 
-def make_grid(zoom, lonlat_range):
+def tiles(zoom, lonlat_range):
+    """指示された緯度経度範囲に地理院メッシュを刻み、そのタイル番号を返す。
+
+    Args:
+        zoom (_type_): _description_
+        lonlat_range (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
     codes = code(zoom, lonlats=lonlat_range)
     bottomleft, topright = codes.astype(int)
     # 与えられたXYの順序に依存しない
@@ -211,7 +220,7 @@ def make_grid(zoom, lonlat_range):
     maxY = max(bottomleft[1], topright[1])
     Yt, Xt = np.mgrid[minY:maxY, minX:maxX]
     XY = np.vstack([Xt.ravel(), Yt.ravel()]).T
-    return lonlat(zoom=zoom, xy=XY), np.array([maxY - minY, maxX - minX])
+    return XY, np.array([maxY - minY, maxX - minX])
 
 
 def test():
