@@ -12,7 +12,7 @@ def interpolate_(point, vertices):
     return p, q, r
 
 
-def interpolate(stations: dict, grids: np.ndarray, extrapolate: bool = False):
+def interpolate(stations: dict, grids: np.ndarray):
     """_summary_
 
     Args:
@@ -37,21 +37,15 @@ def interpolate(stations: dict, grids: np.ndarray, extrapolate: bool = False):
     triangles = tri.find_simplex(grids)
 
     for i, (gridpoint, triangle) in enumerate(zip(grids, triangles)):
-        # a, b, cは順序
-        a, b, c = tri.simplices[triangle]
-        # A, B, Cは測定局ラベル
-        A, B, C = st[a], st[b], st[c]
-        p, q, r = interpolate_(gridpoint, locations[tri.simplices[triangle]])
-        if 0 <= p <= 1 and 0 <= q <= 1 and 0 <= r <= 1:
-            yield A, p, B, q, C, r
-        elif extrapolate:
-            print(p, q, r)
-            pqr = np.array([p, q, r])
-            pqr[pqr < 0] = 0
-            pqr /= np.sum(pqr)
-            p, q, r = pqr
-            print(p, q, r)
-            print()
-            yield A, p, B, q, C, r
+        if triangle < 0:
+            yield None, None, None, None, None, None
         else:
-            yield A, None, B, None, C, None
+            # a, b, cは順序
+            a, b, c = tri.simplices[triangle]
+            # A, B, Cは測定局ラベル
+            A, B, C = st[a], st[b], st[c]
+            p, q, r = interpolate_(gridpoint, locations[tri.simplices[triangle]])
+            # if 0 <= p <= 1 and 0 <= q <= 1 and 0 <= r <= 1:
+            yield A, p, B, q, C, r
+            # else:
+            #     yield A, None, B, None, C, None
