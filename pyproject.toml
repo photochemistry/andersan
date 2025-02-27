@@ -1,31 +1,12 @@
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
-
-
 [project]
 name = "andersan"
-version = "0.0.7" # major.minor.fix
-# authors = [
-#   { name="Masakazu Matsumoto", email="vitroid@gmail.com" },
-# ]
+dynamic = ["version"]
 # description = "Developers' library for Andersan"
-# readme = "README.md"
-# requires-python = ">=3.9"
-# classifiers = [
-#     "Programming Language :: Python :: 3",
-#     "License :: OSI Approved :: MIT License",
-#     "Operating System :: OS Independent",
-# ]
-# dependencies = ["numpy"]
-
-[project.urls]
-"Homepage" = "https://github.com/photochemistry/andersan"
-"Bug Tracker" = "https://github.com/photochemistry/andersan/issues"
+# authors = ["vitroid <vitroid@gmail.com>"]
 
 [tool.poetry]
 name = "andersan"
-version = "0.0.7" # major.minor.fix
+version = "0.1" # major.minor.fix
 description = "Developers' library for Andersan"
 authors = ["vitroid <vitroid@gmail.com>"]
 readme = "README.md"
@@ -33,7 +14,21 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.10"
-numpy = "^1.26.4"
-# fitz = "*"
-# easyocr = "*"
-# frontend = "*"
+numpy = "^2"
+scipy = "^1.15.2"
+requests-cache = "^1.2.1"
+pandas = "^2.2.3"
+airpollutionwatch = {path = "../airpollutionwatch/dist/airpollutionwatch-0.1.5-py3-none-any.whl"}
+delaunayextrapolation = "^0.3"
+sqlitedict = "^2.1.0"
+retry-requests = "^2.0.0"
+
+
+[tool.poetry.group.dev.dependencies]
+ipykernel = "^6.29.5"
+jupyter = "^1.1.1"
+
+[project.urls]
+"Homepage" = "https://github.com/photochemistry/andersan"
+"Bug Tracker" = "https://github.com/photochemistry/andersan/issues"
+

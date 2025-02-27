@@ -2,6 +2,16 @@ import numpy as np
 from scipy.spatial import Delaunay
 
 
+# ある県のグリッドを構成するために必要な近隣県の名前
+Neighbors = dict(
+    kanagawa={"kanagawa", "shizuoka", "tokyo", "chiba", "yamanashi"},
+)
+
+# ある県のグリッドの範囲。細かさはzoomであとで指定する。
+prefecture_ranges = dict(kanagawa=np.array([[138.94, 35.13], [139.84, 35.66]]))
+
+
+
 def interpolate_(point, vertices):
     # last point is the origin
     o = vertices[2]
