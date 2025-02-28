@@ -4,15 +4,17 @@ import datetime
 import requests_cache
 from retry_requests import retry
 from logging import basicConfig, getLogger, INFO
+import pytz
 
 from andersan import tile
-import andersan.archive.openmeteo as archive
 
 try:
-    from .sqlitedictcache import sqlitedict_cache
-    from .__init__ import Neighbors, prefecture_ranges
+    import andersan.archive.openmeteo as archive
+    from andersan.sqlitedictcache import sqlitedict_cache
+    from andersan import Neighbors, prefecture_ranges
 except:
     # for test()
+    import archive.openmeteo as archive
     from sqlitedictcache import sqlitedict_cache
     from __init__ import Neighbors, prefecture_ranges
 
@@ -85,7 +87,7 @@ def tiles_(target_prefecture: str, datestr: str, zoom: int) -> pd.DataFrame:
     return all_forecast_dataframe
 
 
-def tiles(target_prefecture: str, isodate: str, zoom: int) -> pd.DataFrame:
+def tiles0(target_prefecture: str, isodate: str, zoom: int) -> pd.DataFrame:
     # ここで、isodateに時刻が含まれる場合に日付けだけに修正する。
     # そうしないと、キャッシュに同じデータが24個も保管されてしまう。
     dt = datetime.datetime.fromisoformat(isodate)
@@ -100,12 +102,39 @@ def tiles(target_prefecture: str, isodate: str, zoom: int) -> pd.DataFrame:
     return tiles_(target_prefecture, datestr, zoom)
 
 
+def tiles(target_prefecture: str, datehour: str, hours: int, zoom:int) -> pd.DataFrame:
+    # ここで、isodateに時刻が含まれる場合に日付と時だけに修正する。
+    dt = datetime.datetime.fromisoformat(datehour)
+
+    # タイムゾーンを指定（例：日本時間）
+    tz = pytz.timezone("Asia/Tokyo")
+
+    # タイムゾーンを付与
+    dt = tz.localize(dt)
+
+    dt_start = dt.replace(minute=0, second=0, microsecond=0)
+    dt_day = dt_start.replace(hour=0)
+    dt_end = dt_start + datetime.timedelta(hours=hours)
+
+    if dt_end < datetime.datetime.fromisoformat("2021-04-04T00:00:00+09:00"):
+        # use archived data of air monitor, which is provided by archive/openmeteo.py
+        return archive.tiles(target_prefecture, datehour, hours, zoom)
+
+
+    df = pd.DataFrame()
+    while dt_day < dt_end:
+        df = pd.concat([df, tiles0(target_prefecture, dt_day.isoformat(), zoom)])
+        dt_day += datetime.timedelta(hours=24)
+
+    return df[ (dt_start <= df.date)& (df.date < dt_end)]
+
+
 def test():
     basicConfig(level=INFO)
     logger = getLogger()
-    df = tiles("kanagawa", "2015-03-31", zoom=12)
+    df = tiles("kanagawa", "2015-03-31T06", hours=8, zoom=12)
     logger.info(df)
-    df = tiles("kanagawa", "2025-02-27", zoom=12)
+    df = tiles("kanagawa", "2025-02-27T06", hours=8, zoom=12)
     logger.info(df)
 
 

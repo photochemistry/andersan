@@ -6,7 +6,7 @@ dynamic = ["version"]
 
 [tool.poetry]
 name = "andersan"
-version = "0.3" # major.minor.fix
+version = "0.5.2" # major.minor.fix
 description = "Developers' library for Andersan"
 authors = ["vitroid <vitroid@gmail.com>"]
 readme = "README.md"
