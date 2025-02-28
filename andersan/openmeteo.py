@@ -6,6 +6,7 @@ from retry_requests import retry
 from logging import basicConfig, getLogger, INFO
 
 from andersan import tile
+import andersan.archive.openmeteo as archive
 
 try:
     from .sqlitedictcache import sqlitedict_cache
@@ -89,13 +90,22 @@ def tiles(target_prefecture: str, isodate: str, zoom: int) -> pd.DataFrame:
     # そうしないと、キャッシュに同じデータが24個も保管されてしまう。
     dt = datetime.datetime.fromisoformat(isodate)
     datestr = dt.strftime("%Y-%m-%d")
+
+    if datetime.datetime.fromisoformat(
+        dt.strftime("%Y-%m-%dT00:00:00+09:00")
+    ) < datetime.datetime.fromisoformat("2021-04-04T00:00:00+09:00"):
+        # use archived data of air monitor, which is provided by archive/openmeteo.py
+        return archive.tiles_(target_prefecture, datestr, zoom)
+
     return tiles_(target_prefecture, datestr, zoom)
 
 
 def test():
     basicConfig(level=INFO)
     logger = getLogger()
-    df = tiles("kanagawa", "2021-03-31", zoom=12)
+    df = tiles("kanagawa", "2015-03-31", zoom=12)
+    logger.info(df)
+    df = tiles("kanagawa", "2025-02-27", zoom=12)
     logger.info(df)
 
 
