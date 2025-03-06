@@ -72,7 +72,7 @@ def tiles_(target_prefecture: str, datestr: str, zoom: int) -> pd.DataFrame:
             "date": pd.date_range(
                 start=pd.to_datetime(elem["hourly"]["time"][0]),
                 periods=len(elem["hourly"]["time"]),
-                freq="H",
+                freq="h",
                 tz="Asia/Tokyo",
             ),
             "X": x,
@@ -102,9 +102,12 @@ def tiles0(target_prefecture: str, isodate: str, zoom: int) -> pd.DataFrame:
     return tiles_(target_prefecture, datestr, zoom)
 
 
-def tiles(target_prefecture: str, datehour: str, hours: int, zoom:int) -> pd.DataFrame:
+def tiles(target_prefecture: str, datehour: str, hours: int, zoom: int) -> pd.DataFrame:
     # ここで、isodateに時刻が含まれる場合に日付と時だけに修正する。
-    dt = datetime.datetime.fromisoformat(datehour)
+    if datehour == "now":
+        dt = datetime.datetime.now()
+    else:
+        dt = datetime.datetime.fromisoformat(datehour)
 
     # タイムゾーンを指定（例：日本時間）
     tz = pytz.timezone("Asia/Tokyo")
@@ -120,13 +123,12 @@ def tiles(target_prefecture: str, datehour: str, hours: int, zoom:int) -> pd.Dat
         # use archived data of air monitor, which is provided by archive/openmeteo.py
         return archive.tiles(target_prefecture, datehour, hours, zoom)
 
-
     df = pd.DataFrame()
     while dt_day < dt_end:
         df = pd.concat([df, tiles0(target_prefecture, dt_day.isoformat(), zoom)])
         dt_day += datetime.timedelta(hours=24)
 
-    return df[ (dt_start <= df.date)& (df.date < dt_end)]
+    return df[(dt_start <= df.date) & (df.date < dt_end)]
 
 
 def test():
@@ -134,7 +136,8 @@ def test():
     logger = getLogger()
     df = tiles("kanagawa", "2015-03-31T06", hours=8, zoom=12)
     logger.info(df)
-    df = tiles("kanagawa", "2025-02-27T06", hours=8, zoom=12)
+    df = tiles("kanagawa", "now", hours=24, zoom=12)
+    # print(df.head(1).transpose())
     logger.info(df)
 
 

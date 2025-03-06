@@ -18,11 +18,12 @@ numpy = "^2"
 scipy = "^1.15.2"
 requests-cache = "^1.2.1"
 pandas = "^2.2.3"
-airpollutionwatch = {path = "../airpollutionwatch/dist/airpollutionwatch-0.1.5-py3-none-any.whl"}
 delaunayextrapolation = "^0.3"
 sqlitedict = "^2.1.0"
 retry-requests = "^2.0.0"
 pyarrow = "^19.0.1"
+toml = "^0.10.2"
+airpollutionwatch = {path = "../airpollutionwatch"}
 
 
 [tool.poetry.group.dev.dependencies]
