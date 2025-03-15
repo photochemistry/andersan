@@ -9,16 +9,19 @@ from andersan import tile
 from airpollutionwatch.convert import stations as fullstations
 from delaunayextrapolation import DelaunayE
 from airpollutionwatch import kanagawa, shizuoka, tokyo, chiba, yamanashi
+from diskcache import Cache
+
+
+# SQLite をストレージとして使用する場合
+cache = Cache("archive_airmonitor", sqlite_file="archive_airmonitor")
 
 # archive/airmonitor.pyはgrid12の値を返すか、あるいは局ごとのデータ(items/)からその場で三角メッシュを切り、
 # 結果を
 
 try:
-    from .sqlitedictcache import sqlitedict_cache
     from .__init__ import Neighbors, prefecture_ranges
 except:
     # for test()
-    from andersan.sqlitedictcache import sqlitedict_cache
     from andersan import Neighbors, prefecture_ranges
 
 
@@ -53,7 +56,7 @@ def wdws2wxwy(wdws):
 
 # @lru_cache(maxsize=9999)
 # @shelf_cache("airmonitor")
-@sqlitedict_cache("archive_airmonitor")  # vscodeで中身をチェックできる分、こちらのほうが便利
+@cache.memoize()
 def tiles_(
     target_prefecture: str,
     isodate: str,

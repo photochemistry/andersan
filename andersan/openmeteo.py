@@ -5,17 +5,18 @@ import requests_cache
 from retry_requests import retry
 from logging import basicConfig, getLogger, INFO
 import pytz
+from diskcache import Cache #diskcacheをimportする
 
 from andersan import tile
 
 try:
     import andersan.archive.openmeteo as archive
-    from andersan.sqlitedictcache import sqlitedict_cache
+    #from andersan.sqlitedictcache import sqlitedict_cache #sqlitedictcacheは不要
     from andersan import Neighbors, prefecture_ranges
 except:
     # for test()
     import archive.openmeteo as archive
-    from sqlitedictcache import sqlitedict_cache
+    #from sqlitedictcache import sqlitedict_cache #sqlitedictcacheは不要
     from __init__ import Neighbors, prefecture_ranges
 
 OPENMETEO_ITEMS = [
@@ -27,10 +28,13 @@ OPENMETEO_ITEMS = [
     "shortwave_radiation",
 ]
 
+# SQLite をストレージとして使用する場合
+cache = Cache("openmeteo", sqlite_file="openmeteo")
 
 # @lru_cache
 # @shelf_cache("openmeteo")
-@sqlitedict_cache("openmeteo")  # vscodeで中身をチェックできる分、こちらのほうが便利
+#@sqlitedict_cache("openmeteo")  # vscodeで中身をチェックできる分、こちらのほうが便利 #sqlitedictcacheは不要
+@cache.memoize() #diskcacheのmemoizeを使う
 def tiles_(target_prefecture: str, datestr: str, zoom: int) -> pd.DataFrame:
     logger = getLogger()
 

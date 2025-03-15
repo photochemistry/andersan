@@ -24,6 +24,7 @@ retry-requests = "^2.0.0"
 pyarrow = "^19.0.1"
 toml = "^0.10.2"
 airpollutionwatch = {path = "../airpollutionwatch"}
+diskcache = "^5.6.3"
 
 
 [tool.poetry.group.dev.dependencies]

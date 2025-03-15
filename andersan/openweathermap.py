@@ -9,16 +9,18 @@ import pytz
 import json
 
 from andersan import tile
+from diskcache import Cache #diskcacheをimportする
 
 try:
     import andersan.archive.openmeteo as archive
-    from andersan.sqlitedictcache import sqlitedict_cache
     from andersan import Neighbors, prefecture_ranges
 except:
     # for test()
     import archive.openmeteo as archive
-    from sqlitedictcache import sqlitedict_cache
     from __init__ import Neighbors, prefecture_ranges
+
+
+cache = Cache("openweathermap", sqlite_file="openweathermap")
 
 OPENMETEO_ITEMS = [
     "temperature_2m",

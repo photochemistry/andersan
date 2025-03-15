@@ -9,20 +9,20 @@ from airpollutionwatch.convert import stations as fullstations
 from delaunayextrapolation import DelaunayE
 from airpollutionwatch import kanagawa, shizuoka, tokyo, chiba, yamanashi
 import andersan.archive.airmonitor as archive
-# import os
-# import requests_cache
-# from retry_requests import retry
+from diskcache import Cache #diskcacheをimportする
 
 
 try:
-    from .sqlitedictcache import sqlitedict_cache
     from .__init__ import Neighbors, prefecture_ranges
     from . import amedas
 except:
     # for test()
-    from andersan.sqlitedictcache import sqlitedict_cache
     from __init__ import Neighbors, prefecture_ranges
     import amedas
+
+
+# SQLite をストレージとして使用する場合
+cache = Cache("airmonitor", sqlite_file="airmonitor")
 
 
 # 県ごとの大気監視ウェブサイトからデータをもってくる関数の名前
@@ -56,7 +56,7 @@ def wdws2wxwy(wdws):
 
 # @lru_cache(maxsize=9999)
 # @shelf_cache("airmonitor")
-@sqlitedict_cache("airmonitor")  # vscodeで中身をチェックできる分、こちらのほうが便利
+@cache.memoize()
 def tiles_(
     target_prefecture: str,
     isodate: str,
