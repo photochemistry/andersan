@@ -10,14 +10,17 @@ from logging import basicConfig, getLogger, INFO
 import pytz
 
 from andersan import tile as andersan_tile
+from diskcache import Cache #diskcacheをimportする
 
 try:
-    from andersan.sqlitedictcache import sqlitedict_cache
     from andersan.__init__ import Neighbors, prefecture_ranges
 except:
     # for test()
-    from sqlitedictcache import sqlitedict_cache
     from __init__ import Neighbors, prefecture_ranges
+
+
+# SQLite をストレージとして使用する場合
+cache = Cache("archive_openmeteo", sqlite_file="archive_openmeteo")
 
 OPENMETEO_ITEMS = [
     "temperature_2m",
@@ -31,9 +34,7 @@ OPENMETEO_ITEMS = [
 
 # @lru_cache
 # @shelf_cache("openmeteo")
-@sqlitedict_cache(
-    "archive_openmeteo"
-)  # vscodeで中身をチェックできる分、こちらのほうが便利
+@cache.memoize()
 def tiles(target_prefecture: str, datehour: str, hours:int, zoom: int) -> pd.DataFrame:
     # 24時間分を返す?
     logger = getLogger()
