@@ -30,6 +30,7 @@ class _SQLiteDictCacheFunctionWrapper(Generic[P, T]):
                     shelf[call_args] = ret
                     shelf.commit()
             else:
+                logger.debug(f"Cache hit for {self.__basename}.")
                 ret = shelf[call_args]
         return ret
 
