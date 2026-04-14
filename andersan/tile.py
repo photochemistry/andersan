@@ -218,9 +218,11 @@ def tiles(zoom, lonlat_range):
     maxX = max(bottomleft[0], topright[0])
     minY = min(bottomleft[1], topright[1])
     maxY = max(bottomleft[1], topright[1])
-    Yt, Xt = np.mgrid[minY:maxY, minX:maxX]
+    # bbox を「覆う」タイル集合を返すため、max 側も含める。
+    # 旧実装の半開区間 [min, max) では端の1列/1行が落ちることがある。
+    Yt, Xt = np.mgrid[minY : maxY + 1, minX : maxX + 1]
     XY = np.vstack([Xt.ravel(), Yt.ravel()]).T
-    return XY, np.array([maxY - minY, maxX - minX])
+    return XY, np.array([maxY - minY + 1, maxX - minX + 1])
 
 
 def test():
