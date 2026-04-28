@@ -2,7 +2,7 @@ from logging import getLogger, basicConfig, INFO, DEBUG
 import datetime
 import os
 import time
-from typing import List
+from typing import Iterable, List
 
 import pandas as pd
 import numpy as np
@@ -10,6 +10,7 @@ import requests
 import requests_cache
 
 from andersan import tile
+from andersan.tile_utils import bbox_str_from_tiles, filter_table_by_tiles, normalize_tiles
 from airpollutionwatch.convert import stations as fullstations
 from delaunayextrapolation import DelaunayE
 from airpollutionwatch import kanagawa, shizuoka, tokyo, chiba, yamanashi
@@ -42,6 +43,16 @@ def _apw_field_session():
             expire_after=_APW_FIELD_CACHE_SECONDS,
         )
     return _APW_FIELD_SESSION
+
+
+def prefecture_bbox_str(target_prefecture: str) -> str:
+    """既存互換の県bbox文字列を返す。"""
+    pref_range = np.array(prefecture_ranges[target_prefecture])
+    min_lon = float(min(pref_range[0, 0], pref_range[1, 0]))
+    max_lon = float(max(pref_range[0, 0], pref_range[1, 0]))
+    min_lat = float(min(pref_range[0, 1], pref_range[1, 1]))
+    max_lat = float(max(pref_range[0, 1], pref_range[1, 1]))
+    return f"{min_lon},{min_lat},{max_lon},{max_lat}"
 
 
 # 県ごとの大気監視ウェブサイトからデータをもってくる関数の名前
@@ -203,15 +214,34 @@ def apw_tiles_(
     if max_retries < 1:
         raise ValueError(f"max_retries must be >= 1, got {max_retries}")
 
-    # 県の bbox（経度緯度）は prefecture_ranges を利用
+    # 県指定APIは既存のbboxキーを維持して requests_cache ヒット率を保つ。
     pref_range = np.array(
         prefecture_ranges[target_prefecture]
     )  # [[lon1,lat1],[lon2,lat2]]
-    min_lon = float(min(pref_range[0, 0], pref_range[1, 0]))
-    max_lon = float(max(pref_range[0, 0], pref_range[1, 0]))
-    min_lat = float(min(pref_range[0, 1], pref_range[1, 1]))
-    max_lat = float(max(pref_range[0, 1], pref_range[1, 1]))
-    bbox_str = f"{min_lon},{min_lat},{max_lon},{max_lat}"
+    tiles_xy, _ = tile.tiles(zoom, pref_range)
+    bbox_str = prefecture_bbox_str(target_prefecture)
+    return apw_tiles_bbox_(
+        datestr=datestr,
+        zoom=zoom,
+        bbox_str=bbox_str,
+        use_amedas=use_amedas,
+        items=items,
+        max_retries=max_retries,
+        target_tiles=tiles_xy,
+    )
+
+
+def apw_tiles_bbox_(
+    datestr: str,
+    zoom: int,
+    bbox_str: str,
+    use_amedas: bool = True,
+    items: List[str] = ["NMHC", "OX", "NOX", "TEMP", "WX", "WY"],
+    *,
+    max_retries: int = 3,
+    target_tiles: np.ndarray | None = None,
+) -> pd.DataFrame | None:
+    logger = getLogger(__name__)
 
     base_url = "http://andersan.net:8089"
 
@@ -402,6 +432,9 @@ def apw_tiles_(
         if item not in table.columns:
             table[item] = np.nan
 
+    if target_tiles is not None:
+        table = filter_table_by_tiles(table, target_tiles)
+
     return table
 
 
@@ -431,6 +464,35 @@ def tiles(
         use_amedas=use_amedas,
         items=items,
         max_retries=max_retries,
+    )
+
+
+def tiles_by_tiles(
+    target_tiles: Iterable[Iterable[int]],
+    isodate: str,
+    zoom: int,
+    use_amedas=True,
+    items=["NMHC", "OX", "NOX", "TEMP", "WX", "WY"],
+    *,
+    max_retries: int = 3,
+    bbox_str: str | None = None,
+):
+    """タイル集合指定で観測値を返す（内部はbbox取得+タイル絞り込み）。"""
+    dt = datetime.datetime.fromisoformat(isodate)
+    datestr = dt.strftime("%Y-%m-%dT%H:00:00+09:00")
+    tiles_xy = normalize_tiles(target_tiles)
+    if dt < datetime.datetime.fromisoformat("2021-04-04T00:00:00+09:00"):
+        # archived period は idw12 ベースの実装へ委譲する
+        return archive.tiles_by_tiles(tiles_xy, datestr, zoom, items=items)
+    resolved_bbox_str = bbox_str if bbox_str is not None else bbox_str_from_tiles(tiles_xy, zoom)
+    return apw_tiles_bbox_(
+        datestr=datestr,
+        zoom=zoom,
+        bbox_str=resolved_bbox_str,
+        use_amedas=use_amedas,
+        items=items,
+        max_retries=max_retries,
+        target_tiles=tiles_xy,
     )
 
 
