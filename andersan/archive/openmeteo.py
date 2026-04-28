@@ -10,6 +10,7 @@ from logging import basicConfig, getLogger, INFO
 import pytz
 
 from andersan import tile as andersan_tile
+from andersan.tile_utils import normalize_tiles, tiles_to_key
 
 try:
     from andersan.sqlitedictcache import sqlitedict_cache
@@ -31,10 +32,8 @@ OPENMETEO_ITEMS = [
 
 # @lru_cache
 # @shelf_cache("openmeteo")
-@sqlitedict_cache(
-    "archive_openmeteo"
-)  # vscodeで中身をチェックできる分、こちらのほうが便利
-def tiles(target_prefecture: str, datehour: str, hours:int, zoom: int) -> pd.DataFrame:
+@sqlitedict_cache("archive_openmeteo_tiles")  # vscodeで中身をチェックできる分、こちらのほうが便利
+def tiles(target_prefecture: str, datehour: str, hours: int, zoom: int) -> pd.DataFrame:
     # 24時間分を返す?
     logger = getLogger()
 
@@ -52,8 +51,7 @@ def tiles(target_prefecture: str, datehour: str, hours:int, zoom: int) -> pd.Dat
 
     dt_start = dt.replace(minute=0, second=0, microsecond=0)
     dt_day = dt_start.replace(hour=0)
-    dt_end = dt_start + datetime.timedelta(hours=hours-1)
-
+    dt_end = dt_start + datetime.timedelta(hours=hours - 1)
 
     # 地理院メッシュの間隔
     pref_range = np.array(prefecture_ranges[target_prefecture])  # lon,lat
@@ -70,6 +68,37 @@ def tiles(target_prefecture: str, datehour: str, hours:int, zoom: int) -> pd.Dat
     all_forecast_dataframe.loc[:, "Z"] = Z
 
     return all_forecast_dataframe
+
+
+@sqlitedict_cache("archive_openmeteo_tiles_by_tiles")
+def tiles_by_tiles(
+    target_tiles: tuple[tuple[int, int], ...], datehour: str, hours: int, zoom: int
+) -> pd.DataFrame:
+    """タイル集合指定で archived Open-Meteo を返す。"""
+    dt = datetime.datetime.fromisoformat(datehour)
+    tz = pytz.timezone("Asia/Tokyo")
+    dt = tz.localize(dt)
+    dt_start = dt.replace(minute=0, second=0, microsecond=0)
+    dt_end = dt_start + datetime.timedelta(hours=hours - 1)
+    all_forecast_dataframe = pd.DataFrame()
+    for X, Y in target_tiles:
+        df = pd.read_feather(
+            f"/AIR/edamame2/open-meteo-12/{int(X)}.{int(Y)}.12.feather"
+        )
+        df = df[df["date"].between(dt_start, dt_end)]
+        all_forecast_dataframe = pd.concat(
+            [all_forecast_dataframe, df], ignore_index=True
+        )
+    all_forecast_dataframe.loc[:, "Z"] = 12
+    return all_forecast_dataframe
+
+
+def tiles_by_tiles_api(
+    target_tiles, datehour: str, hours: int, zoom: int
+) -> pd.DataFrame:
+    tiles_xy = normalize_tiles(target_tiles)
+    tiles_key = tiles_to_key(tiles_xy)
+    return tiles_by_tiles(tiles_key, datehour, hours, zoom)
 
 
 def test():
