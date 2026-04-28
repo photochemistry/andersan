@@ -1,12 +1,14 @@
 import pandas as pd
 import numpy as np
 import datetime
+from typing import Iterable
 import requests_cache
 from retry_requests import retry
 from logging import basicConfig, getLogger, INFO
 import pytz
 
 from andersan import tile
+from andersan.tile_utils import normalize_tiles, tiles_to_key
 
 try:
     import andersan.archive.openmeteo as archive
@@ -87,6 +89,46 @@ def tiles_(target_prefecture: str, datestr: str, zoom: int) -> pd.DataFrame:
     return all_forecast_dataframe
 
 
+@sqlitedict_cache("openmeteo_tiles_by_xy")
+def tiles_by_xy_(tiles_key: tuple[tuple[int, int], ...], datestr: str, zoom: int) -> pd.DataFrame:
+    logger = getLogger()
+    tiles_xy = np.asarray(tiles_key, dtype=int)
+    if len(tiles_xy) == 0:
+        return pd.DataFrame()
+    lonlats = tile.lonlat(xy=tiles_xy, zoom=zoom)
+    cache_session = requests_cache.CachedSession("airpollution")
+    retry_session = retry(cache_session, retries=5, backoff_factor=0.2)
+    url = "https://api.open-meteo.com/v1/forecast"
+    params = {
+        "latitude": ",".join([f"{x:.4f}" for x in lonlats[:, 1]]),
+        "longitude": ",".join([f"{x:.4f}" for x in lonlats[:, 0]]),
+        "hourly": ",".join(OPENMETEO_ITEMS),
+        "start_date": datestr,
+        "end_date": datestr,
+        "timezone": "Asia/Tokyo",
+    }
+    logger.debug(params)
+    response = retry_session.get(url, params=params)
+    logger.info(response)
+    logger.debug(f"Cached: {response.from_cache}")
+    data = response.json()
+    all_forecast_data = []
+    for elem, (x, y) in zip(data, tiles_xy):
+        hourly_data = {
+            "date": pd.date_range(
+                start=pd.to_datetime(elem["hourly"]["time"][0]),
+                periods=len(elem["hourly"]["time"]),
+                freq="h",
+                tz="Asia/Tokyo",
+            ),
+            "X": x,
+            "Y": y,
+            "Z": zoom,
+        } | {item: elem["hourly"][item] for item in OPENMETEO_ITEMS}
+        all_forecast_data.append(pd.DataFrame(data=hourly_data))
+    return pd.concat(all_forecast_data, ignore_index=True)
+
+
 def tiles0(target_prefecture: str, isodate: str, zoom: int) -> pd.DataFrame:
     # ここで、isodateに時刻が含まれる場合に日付けだけに修正する。
     # そうしないと、キャッシュに同じデータが24個も保管されてしまう。
@@ -128,6 +170,28 @@ def tiles(target_prefecture: str, datehour: str, hours: int, zoom: int) -> pd.Da
         df = pd.concat([df, tiles0(target_prefecture, dt_day.isoformat(), zoom)])
         dt_day += datetime.timedelta(hours=24)
 
+    return df[(dt_start <= df.date) & (df.date < dt_end)]
+
+
+def tiles_by_tiles(target_tiles: Iterable[Iterable[int]], datehour: str, hours: int, zoom: int) -> pd.DataFrame:
+    if datehour == "now":
+        dt = datetime.datetime.now()
+    else:
+        dt = datetime.datetime.fromisoformat(datehour)
+    tz = pytz.timezone("Asia/Tokyo")
+    dt = tz.localize(dt)
+    dt_start = dt.replace(minute=0, second=0, microsecond=0)
+    dt_day = dt_start.replace(hour=0)
+    dt_end = dt_start + datetime.timedelta(hours=hours)
+    if dt_end < datetime.datetime.fromisoformat("2021-04-04T00:00:00+09:00"):
+        archived_datehour = dt_start.strftime("%Y-%m-%dT%H")
+        return archive.tiles_by_tiles_api(target_tiles, archived_datehour, hours, zoom)
+    tiles_xy = normalize_tiles(target_tiles)
+    tiles_key = tiles_to_key(tiles_xy)
+    df = pd.DataFrame()
+    while dt_day < dt_end:
+        df = pd.concat([df, tiles_by_xy_(tiles_key, dt_day.strftime("%Y-%m-%d"), zoom)])
+        dt_day += datetime.timedelta(hours=24)
     return df[(dt_start <= df.date) & (df.date < dt_end)]
 
 
